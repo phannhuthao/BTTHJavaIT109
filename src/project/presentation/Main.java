@@ -1,16 +1,21 @@
 package project.presentation;
 
 import project.business.CourseBusiness;
-import project.config.DatabaseConnect;
+import project.business.StudentBusinees;
+import project.entity.Course;
+import project.entity.Student;
+import project.validate.CourseValidator;
 
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws SQLException, ClassNotFoundException {
+        TableCourse.createTable();
+        TableStudent.createTable();
         Scanner sc = new Scanner(System.in);
+
         int choice;
         while (true) {
             System.out.println("|-------------------MENU-------------------|");
@@ -29,53 +34,206 @@ public class Main {
             choice = sc.nextInt();
             switch (choice) {
                 case 1:
-                    CourseBusiness.showInfoCourse();
+                    showInfoCourse();
                     break;
                 case 2:
+                    addNewCourse(sc);
                     break;
                 case 3:
+                    updateCourse(sc);
                     break;
                 case 4:
+                    deleteCourse(sc);
                     break;
                 case 5:
+                    showInfoStudent();
                     break;
                 case 6:
+                    break;
+                case 7:
+                    break;
+                case 8:
+                    break;
+                case 9:
                     break;
                 case 0:
                     break;
                 default:
                     System.out.println("Lựa chọn không hợp lệ");
             }
-
-            Connection con = DatabaseConnect.getConnection();
-            if (con != null) {
-                System.out.println("Kết nối thành công");
-                try {
-                    Statement st = con.createStatement();
-                    String sqlCourse = "CREATE TABLE IF NOT EXISTS Course (" +
-                            "id INT PRIMARY KEY," +
-                            "name VARCHAR(100) NOT NULL," +
-                            "description TEXT NOT NULL" +
-                            ")";
-                    st.executeUpdate(sqlCourse);
-
-                    String sqlStudent = "CREATE TABLE IF NOT EXISTS Student (" +
-                            "id INT PRIMARY KEY," +
-                            "name VARCHAR(200) NOT NULL," +
-                            "email TEXT NOT NULL," +
-                            "phone VARCHAR(10) NOT NULL," +
-                            "sex BIT NOT NULL," +
-                            "bod DATE NOT NULL," +
-                            "course_id INT," +
-                            "avatar TEXT," +
-                            "status BIT NOT NULL," +
-                            "FOREIGN KEY (course_id) REFERENCES Course(id)" +
-                            ")";
-                    st.executeUpdate(sqlStudent);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
+
+
+    public static void showInfoCourse() {
+        List<Course> courses = CourseBusiness.getAllCourses();
+        if (courses.isEmpty()) {
+            System.out.println("Không có khóa học nào.");
+            return;
+        }
+        System.out.println("|---------------------------------------DANH SÁCH KHÓA HỌC------------------------------------|");
+        String leftAlignFormat = "| %-5s | %-30s | %-50s |%n";
+        System.out.format("|-------|--------------------------------|----------------------------------------------------|%n");
+        System.out.format("| ID    | Tên Khóa Học                   | Mô Tả                                              |%n");
+        System.out.format("|-------|--------------------------------|----------------------------------------------------|%n");
+
+        // In từng dòng dữ liệu
+        for (Course course : courses) {
+            System.out.format(leftAlignFormat, course.getId(), course.getName(), course.getDescription());
+        }
+        System.out.format("|-------|--------------------------------|----------------------------------------------------|%n");
+        System.out.println(" ");
+    }
+
+
+    public static void addNewCourse(Scanner sc) {
+        sc.nextLine();
+        try {
+            System.out.println("========== THÊM DANH SÁCH KHÓA HỌC ==========");
+            System.out.print("Nhập ID khóa học: ");
+            int id = Integer.parseInt(sc.nextLine());
+
+            System.out.print("Nhập tên khóa học: ");
+            String name = sc.nextLine();
+
+            System.out.print("Nhập mô tả khóa học: ");
+            String description = sc.nextLine();
+
+            // Kiểm tra dữ liệu nhập vào
+            if (!CourseValidator.isValidId(id)) {
+                System.out.println("ID không hợp lệ. Vui lòng nhập số nguyên dương.");
+                return;
+            }
+
+            if (!CourseValidator.isValidName(name)) {
+                System.out.println("Tên khóa học không hợp lệ. Không được chứa ký tự đặc biệt.");
+                return;
+            }
+
+            if (!CourseValidator.isValidDescription(description)) {
+                System.out.println("Mô tả không được để trống.");
+                return;
+            }
+
+            Course course = new Course(id, name, description);
+            boolean success = CourseBusiness.addCourse(course);
+            if (success) {
+                System.out.println("Thêm khóa học thành công");
+            } else {
+                System.out.println("Thêm khóa học thất bại (có thể ID đã tồn tại)");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("ID phải là số nguyên.");
+        } catch (Exception e) {
+            System.out.println("Lỗi không xác định: " + e.getMessage());
+        }
+    }
+
+    // cập nhật khóa học
+    public static void updateCourse(Scanner sc) {
+        sc.nextLine();
+        try {
+            System.out.println("========== CẬP NHẬT DANH SÁCH KHÓA HỌC ==========");
+
+            System.out.print("Nhập ID khóa học cần sửa: ");
+            int id = Integer.parseInt(sc.nextLine());
+
+            System.out.print("Nhập tên khóa học mới: ");
+            String name = sc.nextLine();
+
+            System.out.print("Nhập mô tả khóa học mới: ");
+            String description = sc.nextLine();
+
+            // Validate
+            if (!CourseValidator.isValidId(id)) {
+                System.out.println("ID không hợp lệ. Vui lòng nhập số nguyên dương.");
+                return;
+            }
+
+            if (!CourseValidator.isValidName(name)) {
+                System.out.println("Tên khóa học không hợp lệ. Không được chứa ký tự đặc biệt.");
+                return;
+            }
+
+            if (!CourseValidator.isValidDescription(description)) {
+                System.out.println("Mô tả không được để trống.");
+                return;
+            }
+
+            Course course = new Course(id, name, description);
+            boolean success = CourseBusiness.updateCourse(course);
+            if (success) {
+                System.out.println("Cập nhật khóa học thành công.");
+            } else {
+                System.out.println("Không tìm thấy khóa học với ID này hoặc cập nhật thất bại.");
+            }
+
+        } catch (NumberFormatException e) {
+            System.out.println("ID phải là số nguyên.");
+        } catch (Exception e) {
+            System.out.println("Lỗi không xác định: " + e.getMessage());
+        }
+    }
+
+    // xóa khóa học
+    public static void deleteCourse(Scanner sc) {
+        sc.nextLine();
+        try {
+            System.out.print("Nhập ID khóa học cần xóa: ");
+            int id = Integer.parseInt(sc.nextLine());
+
+            if (!CourseValidator.isValidId(id)) {
+                System.out.println("ID không hợp lệ. Vui lòng nhập số nguyên dương.");
+                return;
+            }
+
+            boolean success = CourseBusiness.deleteCourse(id);
+            if (success) {
+                System.out.println("Xóa khóa học thành công.");
+            } else {
+                System.out.println("Không thể xóa khóa học (có thể khóa học không tồn tại hoặc đang có sinh viên đăng ký).");
+            }
+
+        } catch (NumberFormatException e) {
+            System.out.println("ID phải là số nguyên.");
+        } catch (Exception e) {
+            System.out.println("Lỗi không xác định: " + e.getMessage());
+        }
+    }
+
+    public static void showInfoStudent() {
+        List<Student> students = StudentBusinees.getAllStudents();
+        if (students.isEmpty()) {
+            System.out.println("Không có sinh viên nào");
+            return;
+        }
+
+        System.out.println("|---------------------------------------DANH SÁCH SINH VIÊN------------------------------------|");
+        String headerFormat = "| %-5s | %-20s | %-25s | %-12s | %-6s | %-10s | %-10s | %-20s | %-10s |%n";
+        String rowFormat =    "| %-5d | %-20s | %-25s | %-12s | %-6s | %-10s | %-10d | %-20s | %-10s |%n";
+
+        System.out.format("--------------------------------------------------------------------------------------------------------------%n");
+        System.out.format(headerFormat, "ID", "Tên Sinh Viên", "Email", "Phone", "Giới tính", "Ngày sinh", "Khóa học", "Avatar", "Trạng thái");
+        System.out.format("--------------------------------------------------------------------------------------------------------------%n");
+
+        for (Student student : students) {
+            String sexStr = student.getSex() ? "Nam" : "Nữ";
+            String statusStr = student.getStatus() ? "Đang học" : "Nghỉ học";
+
+            System.out.format(rowFormat,
+                    student.getId(),
+                    student.getName(),
+                    student.getEmail(),
+                    student.getPhone(),
+                    sexStr,
+                    student.getBod().toString(),
+                    student.getCourse_id(),
+                    student.getAvatar(),
+                    statusStr
+            );
+        }
+
+        System.out.format("--------------------------------------------------------------------------------------------------------------%n");
+    }
+
 }
