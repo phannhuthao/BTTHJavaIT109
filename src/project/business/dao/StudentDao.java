@@ -1,4 +1,4 @@
-package project.dao;
+package project.business.dao;
 
 import project.config.DatabaseConnect;
 import project.entity.Student;

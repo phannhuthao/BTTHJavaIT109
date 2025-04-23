@@ -1,6 +1,6 @@
-package project.business;
+package project.business.model;
 
-import project.dao.CourseDao;
+import project.business.dao.CourseDao;
 import project.entity.Course;
 
 import java.util.List;

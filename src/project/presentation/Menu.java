@@ -1,7 +1,7 @@
 package project.presentation;
 
-import project.business.CourseBusiness;
-import project.business.StudentBusiness;
+import project.business.model.CourseBusiness;
+import project.business.model.StudentBusiness;
 import project.entity.Course;
 import project.entity.Student;
 import project.validate.CourseValidator;
